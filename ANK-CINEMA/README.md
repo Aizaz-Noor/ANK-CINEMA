@@ -1,56 +1,63 @@
-# ANK-CINEMA v3.0: The One-Click Media Downloader
+# 🎬 ANK-CINEMA v3.0: Portable Media Suite
 
-ANK-Cinema is a portable software suite designed to let you find and download movies and series instantly. Unlike other tools, it requires zero installation, zero technical configuration, and zero external software.
+ANK-Cinema is a professional-grade, standalone media downloader designed for speed, privacy, and absolute ease of use. It transforms the complex process of finding and acquiring movies and series into a simple, one-click experience.
 
-## Why use ANK-Cinema?
+---
 
-| Feature | ANK-Cinema v3.0 | Standard Tools |
+### 🌟 Key Features
+
+- ✅ **Internal Search Engine**: Queries multiple sources (TPB, TorrentGalaxy) in parallel without external tools.
+- ✅ **Zero-Configuration**: Fully portable. All settings and binaries stay inside the project folder.
+- ✅ **Smart Diagnostics**: Automatically detects and repairs ISP blocks or DNS issues.
+- ✅ **High-Speed Core**: Bundles a pre-configured aria2c engine for maximum download velocity.
+- ✅ **Auto-Updating**: Stay current with the latest scrapers via the built-in update system.
+
+---
+
+### 🚀 Quick Start (One-Click)
+
+No installation or command-line knowledge is required. Just run the file for your system:
+
+| System | Action | File to Run |
 | :--- | :--- | :--- |
-| **Setup Time** | 10 Seconds | 10-20 Minutes |
-| **Ease of Use** | Double-Click & Run | Requires Command Line |
-| **Reliability** | Dual-Engine Search | Single Source (Fails often) |
-| **Portability** | Run from a USB stick | Tied to your PC |
+| **Windows** | Double-click | `ANK-CINEMA.exe` (or .bat) |
+| **macOS** | Double-click | `ANK-CINEMA.command` |
+| **Linux** | Run | `ANK-CINEMA.desktop` |
 
 ---
 
-## Quick Start Guide
+### 📦 How it Works
 
-Choose the file for your computer and double-click to start.
-
-| Your Computer | Run This File |
-| :--- | :--- |
-| **Windows** | **ANK-CINEMA.exe** (or .bat) |
-| **macOS** | **ANK-CINEMA.command** |
-| **Linux** | **ANK-CINEMA.desktop** |
+1. **First Launch**: The app builds a private environment (`.venv`) and prepares the high-speed engine (`bin/`).
+2. **Search**: Enter the name of any movie or series. The app checks spelling and offers corrections.
+3. **Download**: Select your preferred quality. The app manages the metadata and starts the download immediately.
 
 ---
 
-## Three Steps to Your First Movie
+### ⚙️ Customization
 
-1. **Launch**: Open the file listed above.
-2. **Search**: Type the name of the movie or series (e.g., "The Batman").
-3. **Download**: Pick your preferred quality (1080p, 4K, etc.) and let the app handle the rest.
-
----
-
-## Advanced Features for Power Users
-
-### Smart Self-Healing
-If your Internet Service Provider (ISP) blocks torrent sites, ANK-Cinema will detect the block and offer to fix your DNS settings automatically. You don't need to know how networking works; the app handles it.
-
-### Automatic Updates
-You never have to visit GitHub again to get the latest version. The app checks for improvements every time you start it and can update itself in seconds.
-
-### Professional Build Tool
-If you are a developer, use the included **build.py** script to compile your own standalone version of the app for any system.
+Settings are managed via `config/config.json`. You can customize:
+- **Download Path**: Set your preferred movie folder.
+- **Max Results**: Control how many search hits you see.
+- **Real-Debrid**: Add your API key for premium cached downloads.
 
 ---
 
-## Technical Details (For Developers)
-- **Language**: Python 3.10+
-- **Core Engine**: Bundled aria2c (Portable)
-- **Scrapers**: Internal Pirate Bay API & TorrentGalaxy Scraper
-- **Dependencies**: Managed automatically via local virtual environment
+### 🛡️ Long-Term Support (LTS)
+
+ANK-Cinema is designed for stability. If a search source goes down, the app automatically switches to a fallback engine. If a technical issue occurs, a detailed report is saved to `logs/error.log` for easy troubleshooting.
+
+---
+
+### 🛠️ Developer Tools
+
+Use `build.py` to compile the script into a standalone binary for distribution.
+```bash
+python build.py
+```
+*Results will be available in the `dist/` folder.*
+
+---
 
 ## License
-Distributed under the MIT License.
+Distributed under the MIT License. Created by [Aizaz-Noor](https://github.com/Aizaz-Noor).
