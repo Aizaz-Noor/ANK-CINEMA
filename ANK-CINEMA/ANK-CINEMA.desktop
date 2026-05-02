@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ANK-CINEMA
+GenericName=P2P Download Accelerator
+Comment=Terminal-based movie and series downloader
+Icon=utilities-terminal
+Terminal=true
+Categories=Network;FileTransfer;
+
+# This Exec line is replaced by install.sh with the real path.
+# Do not edit manually — run install.sh to regenerate.
+Exec=bash -c 'cd "INSTALL_DIR" && bash ANK-CINEMA-launcher.sh; exec bash'
+StartupNotify=false

@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / Build
+build/
+dist/
+ANK-CINEMA.spec
+bin/aria2c*
+
+# Local Config & State
+config/
+ank_results.json
+.installed
+temp_aria2.archive
+
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+
+# OS Specific
+.DS_Store
+Thumbs.db
