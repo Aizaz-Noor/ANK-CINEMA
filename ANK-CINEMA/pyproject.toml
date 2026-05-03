@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 # ── Project metadata ──────────────────────────────────────
 [project]
 name            = "ank-cinema"
-version         = "2.0.0"
+version         = "3.0.0"
 description     = "Cross-platform P2P download accelerator with terminal UI"
 readme          = "README.md"
 license         = { text = "MIT" }

@@ -1,63 +1,50 @@
-# 🎬 ANK-CINEMA v3.0: Portable Media Suite
+# ANK-CINEMA v3.0
 
-ANK-Cinema is a professional-grade, standalone media downloader designed for speed, privacy, and absolute ease of use. It transforms the complex process of finding and acquiring movies and series into a simple, one-click experience.
+ANK-Cinema is a tool for searching and downloading movies and series. It's designed to be portable and easy to run without manual setup.
 
----
+### Features
 
-### 🌟 Key Features
+- **Built-in Search**: Searches multiple sites like TPB and TorrentGalaxy at the same time.
+- **Portable**: Everything stays in the project folder. No system-wide installation needed.
+- **Auto-Fix**: Automatically handles common DNS and ISP blocks.
+- **Fast Downloads**: Uses aria2c for downloading.
+- **Updates**: Includes a system to update scrapers when sites change.
 
-- ✅ **Internal Search Engine**: Queries multiple sources (TPB, TorrentGalaxy) in parallel without external tools.
-- ✅ **Zero-Configuration**: Fully portable. All settings and binaries stay inside the project folder.
-- ✅ **Smart Diagnostics**: Automatically detects and repairs ISP blocks or DNS issues.
-- ✅ **High-Speed Core**: Bundles a pre-configured aria2c engine for maximum download velocity.
-- ✅ **Auto-Updating**: Stay current with the latest scrapers via the built-in update system.
+### Quick Start
 
----
+Run the file for your operating system:
 
-### 🚀 Quick Start (One-Click)
+| System | File to Run |
+| :--- | :--- |
+| **Windows** | `ANK-CINEMA.exe` or `ANK-CINEMA.bat` |
+| **macOS** | `ANK-CINEMA.command` |
+| **Linux** | `ANK-CINEMA.desktop` |
 
-No installation or command-line knowledge is required. Just run the file for your system:
+### How it Works
 
-| System | Action | File to Run |
-| :--- | :--- | :--- |
-| **Windows** | Double-click | `ANK-CINEMA.exe` (or .bat) |
-| **macOS** | Double-click | `ANK-CINEMA.command` |
-| **Linux** | Run | `ANK-CINEMA.desktop` |
+1. **Setup**: On first run, it creates a local environment and downloads required tools.
+2. **Search**: Enter a movie name. It will suggest corrections if you misspell it.
+3. **Download**: Pick the quality you want and the download starts.
 
----
+### Configuration
 
-### 📦 How it Works
+You can change settings in `config/config.json`:
+- **Download Path**: Where files are saved.
+- **Max Results**: How many search results to show.
+- **Real-Debrid**: Add your API key for cached downloads.
 
-1. **First Launch**: The app builds a private environment (`.venv`) and prepares the high-speed engine (`bin/`).
-2. **Search**: Enter the name of any movie or series. The app checks spelling and offers corrections.
-3. **Download**: Select your preferred quality. The app manages the metadata and starts the download immediately.
+### Support
 
----
+If a search site goes down, the app will try a fallback. If something breaks, check `logs/error.log` for details.
 
-### ⚙️ Customization
+### Building from source
 
-Settings are managed via `config/config.json`. You can customize:
-- **Download Path**: Set your preferred movie folder.
-- **Max Results**: Control how many search hits you see.
-- **Real-Debrid**: Add your API key for premium cached downloads.
-
----
-
-### 🛡️ Long-Term Support (LTS)
-
-ANK-Cinema is designed for stability. If a search source goes down, the app automatically switches to a fallback engine. If a technical issue occurs, a detailed report is saved to `logs/error.log` for easy troubleshooting.
-
----
-
-### 🛠️ Developer Tools
-
-Use `build.py` to compile the script into a standalone binary for distribution.
+To create your own standalone binary:
 ```bash
 python build.py
 ```
-*Results will be available in the `dist/` folder.*
-
----
+The output will be in the `dist/` folder.
 
 ## License
-Distributed under the MIT License. Created by [Aizaz-Noor](https://github.com/Aizaz-Noor).
+MIT License. Created by [Aizaz-Noor](https://github.com/Aizaz-Noor).
+
