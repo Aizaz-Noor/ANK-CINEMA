@@ -472,6 +472,27 @@ def get_tracker_string() -> str:
     """Return the current tracker list as a comma-separated string."""
     return ",".join(fetch_trackers())
 
+def choose_download_directory(default: str) -> str:
+    """Ask the user to choose a download directory via file explorer."""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        selected = filedialog.askdirectory(
+            initialdir=default,
+            title="Select folder to save download"
+        )
+        root.destroy()
+        if selected:
+            return selected
+    except Exception as e:
+        log_error(f"Folder chooser unavailable: {e}")
+        console.print("[warn]Folder chooser not available. Using default download folder.[/]")
+    return default
+
 class DownloadHistory:
     def __init__(self):
         self.history_file = HISTORY_F
@@ -795,13 +816,20 @@ def download(magnet: str, cfg: dict) -> None:
         console.print("[err]aria2c not found![/]")
         return
 
-    target = str(Path(cfg["target_dir"]).expanduser())
-    Path(target).mkdir(parents=True, exist_ok=True)
+    default_target = str(Path(cfg["target_dir"]).expanduser())
+    if not Path(default_target).exists():
+        Path(default_target).mkdir(parents=True, exist_ok=True)
+
+    selected_target = choose_download_directory(default_target)
+    if not selected_target:
+        selected_target = default_target
+    selected_target = str(Path(selected_target).expanduser())
+    Path(selected_target).mkdir(parents=True, exist_ok=True)
 
     console.print()
     info = (
         f"[bold green]🚀 Launching high-speed download[/]\n"
-        f"[cyan]📁 Destination :[/] {target}\n"
+        f"[cyan]📁 Destination :[/] {selected_target}\n"
         f"[yellow]⚡ Splits       :[/] {cfg['splits']}  •  "
         f"[yellow]Peers:[/] {cfg['max_peers']}  •  "
         f"[yellow]Seed-time:[/] {cfg['seed_time']}s"
@@ -810,7 +838,7 @@ def download(magnet: str, cfg: dict) -> None:
 
     cmd = [
         aria2,
-        f"--dir={target}",
+        f"--dir={selected_target}",
 
         # ── Tracker list ──────────────────────────────────
         f"--bt-tracker={get_tracker_string()}",
