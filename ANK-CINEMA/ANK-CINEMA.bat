@@ -1,13 +1,6 @@
 @echo off
-:: ============================================================
-::  ANK-CINEMA ARCHITECT v3.0 — One-Click Windows Launcher
-::  Just double-click this file. That's it.
-::
-::  What this does automatically:
-::    1. Manages a local Python environment (.venv)
-::    2. Launches the autonomous ANK-Cinema core
-::  No manual setup required. Fully portable.
-:: ============================================================
+@echo off
+:: ANK-CINEMA Launcher
 setlocal EnableDelayedExpansion
 
 :: Force UTF-8 for UI
@@ -91,24 +84,16 @@ set "PATH=%SCRIPT_DIR%;%VENV_BIN%;%PATH%"
 :: ── Set UTF-8 for Python too ─────────────────────────────
 set "PYTHONIOENCODING=utf-8"
 
-:: ── Setup Environment ──────────────────────────────────────
 if not exist "!VENV_DIR!" (
-    echo [setup] Initializing ANK-Cinema v3.0...
-    echo [setup] Creating private environment (this only happens once)...
+    echo Starting first-time setup...
     python -m venv "!VENV_DIR!" >nul 2>&1
-    if !errorlevel! neq 0 (
-        echo [err] Python not found. Please install Python 3.10+ from python.org
-        pause
-        exit /b 1
-    )
-    echo [setup] Installing core dependencies...
     "!VENV_DIR!\Scripts\pip" install --quiet requests rich >nul 2>&1
-    echo [setup] Setup complete!
+    echo Setup complete.
     echo. > "!READY_FLAG!"
 )
 
-:: ── Launch ───────────────────────────────────────────────
-echo [launch] Starting ANK-Cinema Architect...
+:: Launch
+echo Starting ANK-Cinema...
 "!VENV_DIR!\Scripts\python" "!CORE!"
 
 :: Keep window open if there was an error
