@@ -132,7 +132,6 @@ _theme = Theme({
     "accent"     : "bold magenta",
 })
 console = Console(theme=_theme, highlight=False)
-_bg_pids: list[int] = []   # background aria2c metadata warmers
 
 # ──────────────────────────────────────────────────────────
 # 1.5 SMART DIAGNOSTICS
@@ -351,36 +350,6 @@ def google_suggest(query: str) -> list[str]:
 # ──────────────────────────────────────────────────────────
 # 5. SEARCH (INTERNAL MULTI-SOURCE ENGINE)
 # ──────────────────────────────────────────────────────────
-def _size_to_bytes(size_str: str) -> int:
-    """Convert a size string (e.g. '1.5 GiB', '700 MB') to bytes.
-
-    Handles both IEC (GiB, MiB, KiB, TiB) and SI (GB, MB, KB, TB) notation.
-    Returns 0 for unrecognised or empty input.
-    """
-    if not size_str:
-        return 0
-    # Normalise: lower-case, strip whitespace, remove the trailing 'ib' or 'b'
-    # so that 'GiB' → 'g', 'GB' → 'g', 'MiB' → 'm', etc.
-    s = size_str.lower().strip()
-    # Remove binary suffix variants: 'ib' before bare 'b' so order matters
-    for suffix in ("ib", "b"):
-        if s.endswith(suffix):
-            s = s[: -len(suffix)].strip()
-            break
-    multipliers = {"k": 1024, "m": 1024**2, "g": 1024**3, "t": 1024**4}
-    for unit, mult in multipliers.items():
-        if s.endswith(unit):
-            number_part = s[: -1].strip()
-            try:
-                return int(float(number_part) * mult)
-            except ValueError:
-                return 0
-    # No unit — try treating it as a raw byte count
-    try:
-        return int(s)
-    except ValueError:
-        return 0
-
 def scrape_apibay(query: str) -> list[dict]:
     """Search The Pirate Bay via apibay.org JSON API."""
     try:
@@ -390,11 +359,33 @@ def scrape_apibay(query: str) -> list[dict]:
             return []
         results = []
         for item in data:
+            try:
+                sz_raw = int(item.get("size") or 0)
+            except ValueError:
+                sz_raw = 0
+            
+            if sz_raw > 1024**3:
+                sz_str = f"{round(sz_raw / (1024**3), 2)} GiB"
+            elif sz_raw > 1024**2:
+                sz_str = f"{round(sz_raw / (1024**2), 2)} MiB"
+            else:
+                sz_str = f"{sz_raw} B"
+                
+            try:
+                seeders = int(item.get("seeders") or 0)
+            except ValueError:
+                seeders = 0
+                
+            try:
+                leechers = int(item.get("leechers") or 0)
+            except ValueError:
+                leechers = 0
+
             results.append({
                 "name"    : item.get("name", "Unknown"),
-                "size"    : f"{round(int(item.get('size', 0))/(1024**3), 2)} GiB",
-                "seeders" : int(item.get("seeders", 0)),
-                "leechers": int(item.get("leechers", 0)),
+                "size"    : sz_str,
+                "seeders" : seeders,
+                "leechers": leechers,
                 "magnet"  : f"magnet:?xt=urn:btih:{item.get('info_hash')}&dn={requests.utils.quote(item.get('name',''))}",
                 "source"  : "TPB"
             })
@@ -462,60 +453,6 @@ def search_with_fallback(primary: str, fallback: str = "") -> list[dict]:
         results = search(fallback)
     return results
 
-
-# ──────────────────────────────────────────────────────────
-# 6. BACKGROUND METADATA WARMING
-# ──────────────────────────────────────────────────────────
-def warm_trackers(results: list[dict], count: int = 3) -> None:
-    """
-    Pre-announce to trackers for the top results so the DHT
-    table is warm by the time the user picks a download.
-    Uses a lightweight aria2c RPC session per magnet — no
-    --bt-metadata-only flag because that can lock the info-hash
-    and stall the real download when it starts.
-    """
-    global _bg_pids
-    return  # Disabled: caused port locking and info-hash stalls
-    
-    aria2 = find_aria2c()
-    if not aria2:
-        return
-    for item in results[:count]:
-        magnet = item.get("magnet", "")
-        if not magnet:
-            continue
-        try:
-            # On Windows, we need CREATE_NEW_PROCESS_GROUP to reliably kill via SIGBREAK
-            creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if OS == "Windows" else 0
-            p = subprocess.Popen(
-                [
-                    aria2,
-                    "--enable-dht=true",
-                    "--dht-entry-point=router.bittorrent.com:6881",
-                    "--enable-peer-exchange=true",
-                    "--bt-enable-lpd=true",
-                    f"--bt-tracker={TRACKERS}",
-                    "--bt-save-metadata=true",
-                    "--bt-metadata-only=true",
-                    f"--dir={TEMP_DIR}",
-                    magnet,
-                ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                creationflags=creation_flags
-            )
-            _bg_pids.append(p.pid)
-        except Exception:
-            pass
-
-def kill_warmers() -> None:
-    global _bg_pids
-    for pid in _bg_pids:
-        try:
-            os.kill(pid, signal.SIGTERM if OS != "Windows" else signal.SIGBREAK)
-        except (ProcessLookupError, OSError):
-            pass
-    _bg_pids.clear()
 
 
 # ──────────────────────────────────────────────────────────
@@ -758,9 +695,7 @@ _TITLE = ""  # global set in main() before pick_format() call
 def main() -> None:
     global _TITLE
 
-    # ── Cleanup handler ──────────────────────────────────
     def _cleanup(*_):
-        kill_warmers()
         RESULTS_F.unlink(missing_ok=True)
         sys.exit(0)
 
@@ -822,10 +757,6 @@ def main() -> None:
         console.print("[err]No results found. Try a different spelling or format.[/]")
         sys.exit(1)
 
-    # ── Background metadata warming ──────────────────────
-    console.print("[info]Warming up trackers in background...[/]")
-    warm_trackers(results)
-
     # ── Display ──────────────────────────────────────────
     trimmed = show_results(results, cfg["max_results"])
 
@@ -844,7 +775,6 @@ def main() -> None:
         sys.exit(1)
 
     # ── Download ─────────────────────────────────────────
-    kill_warmers()
     download(magnet, cfg)
 
     console.print("\n[ok]Done.[/] Check your Movies folder.")
