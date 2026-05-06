@@ -13,10 +13,6 @@
 
 </div>
 
-<br>
-<div align="center">
-  <video src="https://raw.githubusercontent.com/Aizaz-Noor/ANK-CINEMA/main/assets/demo.mp4" width="800" controls muted autoplay loop playsinline></video>
-</div>
 
 ---
 
