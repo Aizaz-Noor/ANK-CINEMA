@@ -1,5 +1,4 @@
 @echo off
-@echo off
 :: ANK-CINEMA Launcher
 setlocal EnableDelayedExpansion
 
@@ -12,7 +11,7 @@ set "CORE=%SCRIPT_DIR%ank_cinema_core.py"
 set "ARIA2=%SCRIPT_DIR%bin\aria2c.exe"
 set "READY_FLAG=%SCRIPT_DIR%.installed"
 
-:: ── Find Python ──────────────────────────────────────────
+:: -- Find Python -----------------------------------------------------
 set "PYTHON="
 for %%c in (python python3 py) do (
     if not defined PYTHON (
@@ -33,75 +32,71 @@ if not defined PYTHON (
     exit /b 1
 )
 
-:: ── First-time setup ─────────────────────────────────────
-if not exist "%READY_FLAG%" (
+:: -- First-time setup / virtualenv creation ---------------------------
+if not exist "%VENV_DIR%\Scripts\python.exe" if not exist "%VENV_DIR%\bin\python.exe" (
     echo.
-    echo  +------------------------------------------+
-    echo  ^|  ANK-CINEMA — First-Time Setup           ^|
-    echo  ^|  This runs once. Future starts are       ^|
-    echo  ^|  instant.                                ^|
-    echo  +------------------------------------------+
-    echo.
-
-    :: Run the PowerShell installer (sets ExecutionPolicy for
-    :: itself only — does NOT change your system policy)
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%INSTALLER%"
-
+    echo  [INFO] First-time setup: creating portable virtual environment.
+    echo  [INFO] Required Python packages will be installed automatically.
+    "%PYTHON%" -m venv "%VENV_DIR%" >nul 2>&1
     if errorlevel 1 (
         echo.
-        echo  [ERR] Setup failed. See messages above.
+        echo  [ERR] Virtual environment creation failed.
+        echo  Make sure Python 3.8+ is installed and available on the PATH.
         pause
         exit /b 1
     )
+)
 
-    :: Mark as installed
+:: -- Resolve venv Python executable ----------------------------------
+if exist "%VENV_DIR%\Scripts\python.exe" (
+    set "VENV_PY=%VENV_DIR%\Scripts\python.exe"
+) else if exist "%VENV_DIR%\bin\python.exe" (
+    set "VENV_PY=%VENV_DIR%\bin\python.exe"
+) else (
+    set "VENV_PY=%PYTHON%"
+)
+
+:: -- Install required packages if needed ------------------------------
+if defined VENV_PY (
+    "%VENV_PY%" -m pip install --quiet requests rich >nul 2>&1
+) else (
+    echo.
+    echo  [ERR] Could not resolve a Python interpreter.
+    pause
+    exit /b 1
+)
+
+:: -- Mark setup as complete only after successful setup ----------------
+if not exist "%READY_FLAG%" (
     echo installed > "%READY_FLAG%"
-    echo.
-    echo  [OK] Setup complete! Launching now...
-    echo.
-    timeout /t 2 /nobreak >nul
 )
 
-:: ── Resolve venv Python (Scripts\ or bin\) ───────────────
-set "VENV_PY="
-if exist "%VENV_DIR%\Scripts\python.exe" set "VENV_PY=%VENV_DIR%\Scripts\python.exe"
-if not defined VENV_PY (
-    if exist "%VENV_DIR%\bin\python.exe" set "VENV_PY=%VENV_DIR%\bin\python.exe"
-)
-
-:: Fall back to system Python if venv somehow missing
-if not defined VENV_PY set "VENV_PY=%PYTHON%"
-
-:: ── Add project dir + venv scripts to PATH ───────────────
-:: This makes bundled aria2c.exe and pirate-get visible
+:: -- Add project dir + venv scripts to PATH ---------------------------
 set "VENV_BIN="
 if exist "%VENV_DIR%\Scripts" set "VENV_BIN=%VENV_DIR%\Scripts"
 if not defined VENV_BIN (
     if exist "%VENV_DIR%\bin" set "VENV_BIN=%VENV_DIR%\bin"
 )
+if exist "%SCRIPT_DIR%bin" (
+    set "PATH=%SCRIPT_DIR%bin;%PATH%"
+)
 set "PATH=%SCRIPT_DIR%;%VENV_BIN%;%PATH%"
-
-:: ── Set UTF-8 for Python too ─────────────────────────────
 set "PYTHONIOENCODING=utf-8"
 
-if not exist "!VENV_DIR!" (
-    echo Starting first-time setup...
-    python -m venv "!VENV_DIR!" >nul 2>&1
-    "!VENV_DIR!\Scripts\pip" install --quiet requests rich >nul 2>&1
-    echo Setup complete.
-    echo. > "!READY_FLAG!"
+if not exist "%CORE%" (
+    echo.
+    echo  [ERR] Core application file not found: %CORE%
+    pause
+    exit /b 1
 )
 
-:: Launch
 echo Starting ANK-Cinema...
-"!VENV_DIR!\Scripts\python" "!CORE!"
+"%VENV_PY%" "%CORE%"
 
-:: Keep window open if there was an error
 if errorlevel 1 (
     echo.
     echo  [!!] ANK-Cinema exited with an error.
-    echo  [!!] Delete the file ".installed" and re-run
-    echo  [!!] this bat to reinstall.
+    echo  [!!] Delete the file ".installed" and re-run this bat to reinstall.
     echo.
     pause
 )

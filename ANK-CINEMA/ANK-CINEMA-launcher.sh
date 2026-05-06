@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#!/usr/bin/env bash
 # ANK-CINEMA Launcher
 
 # Get the directory where the script is located
@@ -27,6 +26,8 @@ if [ -z "$PYTHON" ]; then
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
+
+VENV_DIR="$SCRIPT_DIR/.venv"
 
 # ── First-time setup ─────────────────────────────────────
 if [ ! -f "$READY_FLAG" ]; then

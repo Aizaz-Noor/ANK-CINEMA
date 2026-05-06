@@ -1,10 +1,10 @@
 #!/bin/bash
 # ============================================================
-#  ANK-CINEMA ARCHITECT v2.0 — macOS One-Click Launcher
+#  ANK-CINEMA ARCHITECT v3.0 — macOS One-Click Launcher
 #  Double-click this file in Finder. Terminal opens and
 #  the tool installs + launches automatically.
 #
-#  First run : installs everything, then launches
+#  First run : creates a local virtualenv and installs deps
 #  Every run : launches instantly
 # ============================================================
 
@@ -12,8 +12,8 @@
 cd "$(dirname "$0")"
 
 READY_FLAG=".installed"
-INSTALLER="./install.sh"
 CORE="./ank_cinema_core.py"
+LAUNCHER="./ANK-CINEMA-launcher.sh"
 
 # ── Find Python ──────────────────────────────────────────
 PYTHON=""
@@ -37,26 +37,12 @@ fi
 
 export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 
-# ── First-time setup ─────────────────────────────────────
-if [ ! -f "$READY_FLAG" ]; then
+# ── Launch the portable launcher script ───────────────────
+if [ ! -f "$LAUNCHER" ]; then
     echo ""
-    echo "  +------------------------------------------+"
-    echo "  |  ANK-CINEMA — First-Time Setup           |"
-    echo "  |  This runs once. Future starts instant.  |"
-    echo "  +------------------------------------------+"
-    echo ""
-    bash "$INSTALLER"
-    if [ $? -ne 0 ]; then
-        echo ""
-        echo "  [ERR] Setup failed. See messages above."
-        read -p "Press Enter to exit..."
-        exit 1
-    fi
-    echo "installed" > "$READY_FLAG"
-    echo ""
-    echo "  [OK] Setup complete! Launching now..."
-    sleep 1
+    echo "  [ERR] Launcher script not found: $LAUNCHER"
+    echo "  Please keep this file alongside ANK-CINEMA-launcher.sh"
+    exit 1
 fi
 
-# ── Launch ───────────────────────────────────────────────
-"$PYTHON" "$CORE"
+bash "$LAUNCHER"
