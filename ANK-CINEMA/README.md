@@ -14,9 +14,8 @@
 </div>
 
 <br>
-<div align="center">
-  <video src="https://github.com/Aizaz-Noor/ANK-CINEMA/raw/main/assets/demo.mp4" width="800" controls="controls" autoplay loop muted></video>
-</div>
+
+https://github.com/Aizaz-Noor/ANK-CINEMA/raw/main/assets/demo.mp4
 
 ---
 
