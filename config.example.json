@@ -1,9 +1,0 @@
-{
-  "target_dir"   : "~/Movies",
-  "rd_api_key"   : "",
-  "max_results"  : 10,
-  "splits"       : 16,
-  "max_peers"    : 200,
-  "seed_time"    : 0,
-  "min_split_mb" : 1
-}
