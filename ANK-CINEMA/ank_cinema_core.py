@@ -11,6 +11,7 @@ License: MIT
 """
 
 import json
+from typing import Optional
 import io
 import os
 import platform
@@ -252,10 +253,10 @@ def save_config(cfg: dict) -> None:
 # ──────────────────────────────────────────────────────────
 # 3. DEPENDENCY MANAGEMENT
 # ──────────────────────────────────────────────────────────
-def _which(name: str) -> str | None:
+def _which(name: str) -> Optional[str]:
     return shutil.which(name)
 
-def find_aria2c() -> str | None:
+def find_aria2c() -> Optional[str]:
     # 1. Local bin folder (V3 Standard)
     local_bin = _SCRIPT_DIR / "bin" / ("aria2c.exe" if OS == "Windows" else "aria2c")
     if local_bin.exists():

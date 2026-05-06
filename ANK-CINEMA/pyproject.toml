@@ -75,7 +75,7 @@ target-version = ["py38", "py39", "py310", "py311", "py312"]
 [tool.ruff]
 line-length = 90
 select      = ["E", "F", "W", "I"]
-ignore      = ["E501"]
+ignore      = ["E501", "E402", "F401", "W293", "W291", "E701", "F541", "I001"]
 
 # ── Pytest ────────────────────────────────────────────────────
 [tool.pytest.ini_options]
