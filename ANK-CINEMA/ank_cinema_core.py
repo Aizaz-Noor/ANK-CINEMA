@@ -475,6 +475,8 @@ def warm_trackers(results: list[dict], count: int = 3) -> None:
     and stall the real download when it starts.
     """
     global _bg_pids
+    return  # Disabled: caused port locking and info-hash stalls
+    
     aria2 = find_aria2c()
     if not aria2:
         return
@@ -699,7 +701,7 @@ def download(magnet: str, cfg: dict) -> None:
         f"--min-split-size={cfg['min_split_mb']}M",
         "--max-overall-download-limit=0",
         f"--bt-max-peers={cfg['max_peers']}",
-        "--bt-request-peer-speed-limit=100K",
+        "--bt-request-peer-speed-limit=50M",
 
         # ── Misc ──────────────────────────────────────────
         f"--seed-time={cfg['seed_time']}",
