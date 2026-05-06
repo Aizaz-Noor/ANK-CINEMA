@@ -8,7 +8,7 @@
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue?logo=python&logoColor=white)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#quick-start)
-[![Tests](https://img.shields.io/badge/tests-26%20passing-brightgreen)](#development)
+[![Tests](https://img.shields.io/badge/tests-18%20passing-brightgreen)](#development)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-orange)](https://github.com/astral-sh/ruff)
 
 </div>
@@ -69,16 +69,6 @@ query
 
 `asyncio` was not used. For two concurrent I/O calls in a synchronous CLI, `ThreadPoolExecutor` has lower overhead and is easier to follow.
 
-### Background metadata warm-up
-
-After results appear, and while the user reads the table, the app pre-announces the top three results to BitTorrent trackers in the background:
-
-```python
-warm_trackers(results, count=3)   # fires immediately after display
-```
-
-BitTorrent metadata resolution takes a few seconds on a fresh magnet. Pre-announcing hides that wait behind the time it takes to read and pick a result.
-
 ### Magnet enrichment
 
 Bare magnet links (`magnet:?xt=urn:btih:HASH`) require DHT to find peers, which is blocked or throttled by many ISPs over UDP. `enrich_magnet()` appends 16 tracker URLs to every magnet before it reaches `aria2c`, ordered HTTPS-first:
@@ -124,13 +114,13 @@ Settings persist in `ANK-CINEMA/config/config.json`:
 
 ```
 ANK-CINEMA/                      ← all source lives here
-├── ank_cinema_core.py           ← the whole app — 852 lines, nine numbered sections
+├── ank_cinema_core.py           ← the whole app — ~780 lines, nine numbered sections
 ├── build_binary.py                     ← builds a standalone binary via PyInstaller
 ├── pyproject.toml               ← PEP 517/518 packaging with ank-cinema entry point
 ├── requirements.txt             ← runtime deps: requests, rich
 ├── tests/
 │   ├── conftest.py              ← blocks real network calls during tests
-│   └── test_core.py             ← 26 unit tests across 7 test classes
+│   └── test_core.py             ← 18 unit tests across 6 test classes
 ├── ANK-CINEMA.bat               ← Windows launcher
 ├── ANK-CINEMA.command           ← macOS launcher
 ├── ANK-CINEMA-launcher.sh       ← Linux launcher
@@ -151,12 +141,12 @@ git clone https://github.com/Aizaz-Noor/ANK-CINEMA.git
 cd ANK-CINEMA/ANK-CINEMA
 pip install -e ".[dev]"
 
-pytest tests/ -v       # run 26 tests — no network required
+pytest tests/ -v       # run 18 tests — no network required
 ruff check ank_cinema_core.py
 python build_binary.py        # builds dist/ANK-CINEMA[.exe]
 ```
 
-The test suite found a real bug during development: `_size_to_bytes("1.5 GiB")` was returning `0` because the suffix-stripping logic stripped the `b` from "GiB" but left "Gi", which did not match the single-character unit keys. Fixed before v3.0 shipped.
+The test suite and bug hunting sweeps found a real bug during development: the upstream apibay JSON API occasionally returned empty strings for file sizes, which caused a fatal `ValueError` and crashed the app. The parser was hardened with a robust `try...except` block and dynamic byte-conversion to guarantee stability before final release.
 
 ---
 

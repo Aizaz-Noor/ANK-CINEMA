@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [3.0.1] — 2026-05
+
+### Fixed
+
+- **API Parsing Crash** — Hardened the `scrape_apibay` JSON parser with robust type-checking and `try...except` blocks to prevent `ValueError` crashes when upstream torrents report empty or malformed file sizes.
+- **Download Startup Latency** — Resolved user-reported slow download startup times by aggressively increasing the `aria2c` `bt-request-peer-speed-limit` flag from `100K` to `50M`.
+
+### Removed
+
+- **Background Metadata Warm-up** — Completely purged the `warm_trackers` background subprocess logic. It was causing port locks and info-hash stalls that actively hindered `aria2c` from starting actual downloads.
+- **Dead Code** — Removed the unused `_size_to_bytes` helper function and its associated 8-test unit suite.
+
+---
+
 ## [3.0.0] — 2026-05
 
 ### Added

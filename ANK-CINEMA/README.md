@@ -8,7 +8,7 @@
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue?logo=python&logoColor=white)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#quick-start)
-[![Tests](https://img.shields.io/badge/tests-26%20passing-brightgreen)](#development)
+[![Tests](https://img.shields.io/badge/tests-18%20passing-brightgreen)](#development)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-orange)](https://github.com/astral-sh/ruff)
 
 </div>
@@ -26,7 +26,6 @@ The engineering work that makes this interesting is not the download itself  `ar
 - [Quick Start](#quick-start)
 - [How It Works](#how-it-works)
   - [Parallel search](#parallel-search)
-  - [Background metadata warm-up](#background-metadata-warm-up)
   - [Magnet enrichment](#magnet-enrichment)
   - [Self-healing DNS](#self-healing-dns-linux-only)
   - [Portable bootstrapper](#portable-bootstrapper)
@@ -88,18 +87,6 @@ query
 Once both threads return, results are deduplicated by BitTorrent info-hash so the same torrent from two sources appears only once. The list is then sorted by seeder count, highest first.
 
 `asyncio` was not used here. For two concurrent I/O calls in a synchronous CLI, `ThreadPoolExecutor` has less setup cost and makes the code easier to follow.
-
----
-
-### Background metadata warm-up
-
-After the search results appear on screen, and while the user is reading the table, the app quietly pre-announces the top three results to BitTorrent trackers using lightweight `aria2c` sessions in the background.
-
-```python
-warm_trackers(results, count=3)   # starts background sessions immediately after display
-```
-
-BitTorrent metadata resolution takes a few seconds on a fresh magnet. Pre-announcing hides that wait behind the time it takes the user to read and pick a result. When the download actually starts, peers are already known.
 
 ---
 
@@ -177,14 +164,14 @@ The config file is gitignored. Your personal paths and API keys stay local.
 
 ```
 ANK-CINEMA/
-├── ank_cinema_core.py       # The whole app — 852 lines, nine numbered sections
+├── ank_cinema_core.py       # The whole app — ~780 lines, nine numbered sections
 ├── build_binary.py                 # Builds a standalone binary via PyInstaller
 ├── pyproject.toml           # PEP 517/518 packaging, entry point, dev deps
 ├── requirements.txt         # Runtime deps: requests, rich
 │
 ├── tests/
 │   ├── conftest.py          # Blocks real network calls during tests
-│   └── test_core.py         # 26 unit tests across 7 test classes
+│   └── test_core.py         # 18 unit tests across 6 test classes
 │
 ├── ANK-CINEMA.bat           # Windows launcher
 ├── ANK-CINEMA.command       # macOS launcher
@@ -217,7 +204,7 @@ This installs the app in editable mode plus `pytest`, `ruff`, and `black`.
 pytest tests/ -v
 ```
 
-All 26 tests run without network access. A `conftest.py` fixture blocks real connections at the socket level so tests are deterministic. The test suite caught a genuine bug during development: `_size_to_bytes("1.5 GiB")` was returning `0` because the suffix-stripping logic stripped the wrong characters from IEC notation. That bug was present in production before the tests were written.
+All 18 tests run without network access. A `conftest.py` fixture blocks real connections at the socket level so tests are deterministic. The test suite and bug hunting sweeps found a genuine bug during development: the upstream apibay JSON API occasionally returned empty strings for file sizes, which caused a fatal `ValueError` and crashed the app. The parser was hardened with a robust `try...except` block and dynamic byte-conversion to guarantee stability before final release.
 
 **Lint:**
 
@@ -260,7 +247,7 @@ The matrix is in `.github/workflows/ci.yml`.
 | ThreadPoolExecutor | Two parallel search threads — lighter than asyncio for this case |
 | [PyInstaller](https://pyinstaller.org/) | Packages the app into a single executable with no Python required |
 | ruff | Linter — catches issues fast, consistent with CI |
-| pytest | 26 unit tests covering all pure functions |
+| pytest | 18 unit tests covering all pure functions |
 
 ---
 
