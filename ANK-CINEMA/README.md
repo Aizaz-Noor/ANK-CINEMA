@@ -13,6 +13,11 @@
 
 </div>
 
+<br>
+<div align="center">
+  <video src="https://github.com/Aizaz-Noor/ANK-CINEMA/raw/main/assets/demo.mp4" width="800" controls="controls" autoplay loop muted></video>
+</div>
+
 ---
 
 ANK-Cinema runs from a double-click. It searches multiple torrent indexes in parallel, shows results in a colour-coded table, and hands the chosen magnet to `aria2c`  a download engine it either finds on your system or installs for you. No configuration needed on first run. The app keeps everything inside its own folder and never touches your system Python.
