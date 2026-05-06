@@ -27,7 +27,9 @@ from concurrent.futures import ThreadPoolExecutor
 # ── Fix: Windows Unicode/emoji crash ─────────────────────────
 # Must run before any output and before rich is imported.
 # Fixes UnicodeEncodeError on cp1252/cp850 Windows terminals.
-if platform.system() == "Windows":
+# Guard: skip when running under pytest (it manages stdout itself).
+_under_pytest = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
+if platform.system() == "Windows" and not _under_pytest:
     if hasattr(sys.stdout, "buffer"):
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     if hasattr(sys.stderr, "buffer"):
@@ -349,17 +351,32 @@ def google_suggest(query: str) -> list[str]:
 # 5. SEARCH (INTERNAL MULTI-SOURCE ENGINE)
 # ──────────────────────────────────────────────────────────
 def _size_to_bytes(size_str: str) -> int:
-    """Convert size string (e.g. '1.5 GiB') to bytes for sorting."""
-    size_str = size_str.lower().replace("b", "").strip()
+    """Convert a size string (e.g. '1.5 GiB', '700 MB') to bytes.
+
+    Handles both IEC (GiB, MiB, KiB, TiB) and SI (GB, MB, KB, TB) notation.
+    Returns 0 for unrecognised or empty input.
+    """
+    if not size_str:
+        return 0
+    # Normalise: lower-case, strip whitespace, remove the trailing 'ib' or 'b'
+    # so that 'GiB' → 'g', 'GB' → 'g', 'MiB' → 'm', etc.
+    s = size_str.lower().strip()
+    # Remove binary suffix variants: 'ib' before bare 'b' so order matters
+    for suffix in ("ib", "b"):
+        if s.endswith(suffix):
+            s = s[: -len(suffix)].strip()
+            break
     multipliers = {"k": 1024, "m": 1024**2, "g": 1024**3, "t": 1024**4}
     for unit, mult in multipliers.items():
-        if unit in size_str:
+        if s.endswith(unit):
+            number_part = s[: -1].strip()
             try:
-                return int(float(size_str.replace(unit, "").strip()) * mult)
+                return int(float(number_part) * mult)
             except ValueError:
                 return 0
+    # No unit — try treating it as a raw byte count
     try:
-        return int(size_str)
+        return int(s)
     except ValueError:
         return 0
 

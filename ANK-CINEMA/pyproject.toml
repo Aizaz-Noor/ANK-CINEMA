@@ -76,3 +76,11 @@ target-version = ["py38", "py39", "py310", "py311", "py312"]
 line-length = 90
 select      = ["E", "F", "W", "I"]
 ignore      = ["E501"]
+
+# ── Pytest ────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths    = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v"
