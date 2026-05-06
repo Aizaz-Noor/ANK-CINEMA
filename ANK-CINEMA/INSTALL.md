@@ -16,7 +16,7 @@ This package is designed to work as a portable, one-click product on Windows, ma
 5. The app starts immediately after setup.
 
 ### Alternative
-- If you build a portable executable with `build.py`, double-click the generated `.exe` instead.
+- If you build a portable executable with `build_binary.py`, double-click the generated `.exe` instead.
 
 ## macOS
 1. Open `ANK-CINEMA/` in Finder.

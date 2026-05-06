@@ -49,7 +49,7 @@ ank-cinema
 **Build a standalone binary** (no Python required on target machine):
 
 ```bash
-python ANK-CINEMA/build.py
+python ANK-CINEMA/build_binary.py
 # Output → ANK-CINEMA/dist/ANK-CINEMA[.exe]
 ```
 
@@ -125,7 +125,7 @@ Settings persist in `ANK-CINEMA/config/config.json`:
 ```
 ANK-CINEMA/                      ← all source lives here
 ├── ank_cinema_core.py           ← the whole app — 852 lines, nine numbered sections
-├── build.py                     ← builds a standalone binary via PyInstaller
+├── build_binary.py                     ← builds a standalone binary via PyInstaller
 ├── pyproject.toml               ← PEP 517/518 packaging with ank-cinema entry point
 ├── requirements.txt             ← runtime deps: requests, rich
 ├── tests/
@@ -153,7 +153,7 @@ pip install -e ".[dev]"
 
 pytest tests/ -v       # run 26 tests — no network required
 ruff check ank_cinema_core.py
-python build.py        # builds dist/ANK-CINEMA[.exe]
+python build_binary.py        # builds dist/ANK-CINEMA[.exe]
 ```
 
 The test suite found a real bug during development: `_size_to_bytes("1.5 GiB")` was returning `0` because the suffix-stripping logic stripped the `b` from "GiB" but left "Gi", which did not match the single-character unit keys. Fixed before v3.0 shipped.

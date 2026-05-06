@@ -67,7 +67,7 @@ ank-cinema
 **Build a standalone binary** (no Python required on the target machine):
 
 ```bash
-python build.py
+python build_binary.py
 # Output → dist/ANK-CINEMA  (or ANK-CINEMA.exe on Windows)
 ```
 
@@ -178,7 +178,7 @@ The config file is gitignored. Your personal paths and API keys stay local.
 ```
 ANK-CINEMA/
 ├── ank_cinema_core.py       # The whole app — 852 lines, nine numbered sections
-├── build.py                 # Builds a standalone binary via PyInstaller
+├── build_binary.py                 # Builds a standalone binary via PyInstaller
 ├── pyproject.toml           # PEP 517/518 packaging, entry point, dev deps
 ├── requirements.txt         # Runtime deps: requests, rich
 │
@@ -228,10 +228,10 @@ ruff check ank_cinema_core.py
 **Build the binary:**
 
 ```bash
-python build.py
+python build_binary.py
 ```
 
-`build.py` downloads `aria2c` for the current platform if it is not already in `bin/`, then runs PyInstaller with `--onefile`. The output is in `dist/`.
+`build_binary.py` downloads `aria2c` for the current platform if it is not already in `bin/`, then runs PyInstaller with `--onefile`. The output is in `dist/`.
 
 ---
 

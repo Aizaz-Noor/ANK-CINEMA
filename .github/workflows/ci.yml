@@ -24,7 +24,7 @@ jobs:
 
       - name: Run ruff
         working-directory: ANK-CINEMA
-        run: ruff check ank_cinema_core.py build.py
+        run: ruff check ank_cinema_core.py build_binary.py
 
   # ── Test matrix ─────────────────────────────────────────────────────────────
   test:

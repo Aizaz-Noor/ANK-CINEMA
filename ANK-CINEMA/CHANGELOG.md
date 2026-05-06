@@ -23,7 +23,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **GitHub Actions CI** — lint (ruff) + 9-combination test matrix (Ubuntu, Windows, macOS × Python 3.9, 3.11, 3.12) + wheel build check.
 - **pyproject.toml** — PEP 517/518 packaging with an `ank-cinema` console entry point.
 - **Cross-platform launchers** — `.bat` (Windows), `.command` (macOS), `.sh` / `.desktop` (Linux).
-- **PyInstaller build pipeline** — `build.py` downloads the correct aria2c binary and produces a single-file executable.
+- **PyInstaller build pipeline** — `build_binary.py` downloads the correct aria2c binary and produces a single-file executable.
 
 ### Fixed
 
