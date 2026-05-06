@@ -13,6 +13,10 @@
 
 </div>
 
+<br>
+<div align="center">
+  <img src="../assets/demo.gif" alt="ANK-Cinema Demo" width="800" />
+</div>
 
 ---
 
