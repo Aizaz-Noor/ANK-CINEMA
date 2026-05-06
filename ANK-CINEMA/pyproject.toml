@@ -12,7 +12,7 @@ license         = { text = "MIT" }
 requires-python = ">=3.8"
 
 authors = [
-    { name = "Aizaz Noor", email = "aizaznoor@example.com" }
+    { name = "Aizaz Noor", email = "aizaznoor@proton.me" }
 ]
 
 keywords = [
@@ -39,7 +39,6 @@ classifiers = [
 dependencies = [
     "requests>=2.28.0",
     "rich>=13.0.0",
-    "pirate-get>=0.3.4",
 ]
 
 # ── Optional extras ───────────────────────────────────────

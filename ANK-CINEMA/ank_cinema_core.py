@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-# ANK-CINEMA v3.0
-# Movie & Series Downloader for Windows, Linux, and macOS
-# Author: Aizaz Noor
-# GitHub: https://github.com/aizaznoor/ANK-CINEMA
-# License: MIT
-
+"""
+╔══════════════════════════════════════════════════════════╗
+║           ANK-CINEMA ARCHITECT v3.0                      ║
+║     Cross-Platform Movie & Series Downloader             ║
+║     Linux · Windows · macOS  |  One-Click Standalone     ║
+╚══════════════════════════════════════════════════════════╝
+Author : Aizaz Noor
+GitHub : https://github.com/aizaznoor/ANK-CINEMA
+License: MIT
+"""
 
 import json
 import io
@@ -16,7 +20,6 @@ import shutil
 import signal
 import tempfile
 import time
-import hashlib
 from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -31,38 +34,15 @@ if platform.system() == "Windows":
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
-# ── Enhanced signal handler for graceful cleanup ──────────────
-_bg_pids: list[int] = []
-_cleanup_done = False
-
-def _signal_cleanup(signum, frame):
-    """Gracefully terminate background processes and exit."""
-    global _cleanup_done
-    if _cleanup_done:
-        return
-    _cleanup_done = True
-    
-    for pid in _bg_pids:
-        try:
-            if platform.system() == "Windows":
-                os.kill(pid, signal.SIGBREAK)
-            else:
-                os.kill(pid, signal.SIGTERM)
-        except (ProcessLookupError, OSError):
-            pass
-    
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, _signal_cleanup)
-signal.signal(signal.SIGTERM, _signal_cleanup)
-
 # ── Fix: add project dir to PATH so bundled aria2c.exe ───────
 # is found without any manual PATH editing by the user.
 _SCRIPT_DIR = Path(__file__).parent.resolve()
 if str(_SCRIPT_DIR) not in os.environ.get("PATH", ""):
     os.environ["PATH"] = str(_SCRIPT_DIR) + os.pathsep + os.environ.get("PATH", "")
 
-# Setup dependencies
+# ──────────────────────────────────────────────────────────
+# 0. AUTO-INSTALL DEPENDENCIES
+# ──────────────────────────────────────────────────────────
 def _pip(*packages: str) -> None:
     args = [sys.executable, "-m", "pip", "install", "--quiet"]
     if platform.system() != "Windows":
@@ -85,20 +65,17 @@ from rich.text import Text
 from rich.prompt import Prompt
 from rich.rule import Rule
 from rich.theme import Theme
-from rich.progress import Progress, BarColumn, TimeRemainingColumn, TextColumn
 from rich import box as rbox
 
-# Constants
-VERSION        = "3.0.0"
-API_VERSION    = "3.0"  # For backward compatibility with future versions
-OS             = platform.system()          # "Linux" | "Windows" | "Darwin"
-TEMP_DIR       = Path(tempfile.gettempdir())
-RESULTS_F      = _SCRIPT_DIR / "ank_results.json"
-CONFIG_D       = _SCRIPT_DIR / "config"
-CONFIG_F       = CONFIG_D / "config.json"
-HISTORY_F      = _SCRIPT_DIR / "history.json"
-LOGS_D         = _SCRIPT_DIR / "logs"
-REQUEST_TIMEOUT = 10  # seconds
+# ──────────────────────────────────────────────────────────
+# 1. CONSTANTS & GLOBALS
+# ──────────────────────────────────────────────────────────
+VERSION   = "3.0.0"
+OS        = platform.system()          # "Linux" | "Windows" | "Darwin"
+TEMP_DIR  = Path(tempfile.gettempdir())
+RESULTS_F = _SCRIPT_DIR / "ank_results.json"
+CONFIG_D  = _SCRIPT_DIR / "config"
+CONFIG_F  = CONFIG_D / "config.json"
 
 # Ordered: HTTPS first (ISP-friendly, bypass UDP blocks),
 # then HTTP, then UDP (fast but blocked by many ISPs).
@@ -152,8 +129,11 @@ _theme = Theme({
     "accent"     : "bold magenta",
 })
 console = Console(theme=_theme, highlight=False)
+_bg_pids: list[int] = []   # background aria2c metadata warmers
 
-# Diagnostics
+# ──────────────────────────────────────────────────────────
+# 1.5 SMART DIAGNOSTICS
+# ──────────────────────────────────────────────────────────
 def run_diagnostics() -> dict:
     results = {"ok": True, "issues": []}
     
@@ -195,204 +175,81 @@ def show_diagnostics():
             title="[err]System Issues Detected[/]",
             border_style="red"
         ))
-        if any("DNS" in i for i in diag["issues"]):
+        if OS == "Linux" and any("DNS" in i for i in diag["issues"]):
             if Prompt.ask("Attempt DNS auto-fix?", choices=["y", "n"], default="y") == "y":
                 heal_dns()
     return diag["ok"]
 
-# Update system
+# ──────────────────────────────────────────────────────────
+# 1.6 REMOTE UPDATER
+# ──────────────────────────────────────────────────────────
 def check_for_updates():
-    """Check for new version and prompt user to update."""
     try:
-        # Fetch version from GitHub with retry
-        def fetch_version():
-            return requests.get(
-                "https://raw.githubusercontent.com/aizaznoor/ANK-CINEMA/main/VERSION",
-                timeout=REQUEST_TIMEOUT
-            )
-        
-        r = call_with_retry(fetch_version)
+        # We fetch a small version file from GitHub
+        r = requests.get("https://raw.githubusercontent.com/aizaznoor/ANK-CINEMA/main/VERSION", timeout=5)
+        if r.status_code != 200:
+            return
         remote_version = r.text.strip()
-        if remote_version != VERSION:
-            console.print(f"\n[accent]✨ New version {remote_version} available! (Current: {VERSION})[/]")
-            if Prompt.ask("Update core engine now?", choices=["y", "n"], default="y") == "y":
-                update_self()
+        if not remote_version or remote_version == VERSION:
+            return
+        console.print(f"\n[accent]✨ New version {remote_version} available! (Current: {VERSION})[/]")
+        if Prompt.ask("Update core engine now?", choices=["y", "n"], default="y") == "y":
+            update_self()
+    except requests.RequestException:
+        return
     except Exception as e:
         log_error(f"Update check failed: {e}")
-        pass
+        return
 
 def update_self():
-    """Safely update to new version with rollback capability."""
     try:
-        import shutil as sh
-        backup_path = Path(__file__).with_suffix('.py.bak')
-        
-        # Create backup
-        sh.copy2(__file__, backup_path)
-        console.print("[info]Backup created[/]")
-        
-        # Download new version
         console.print("[info]Downloading update...[/]")
-        def fetch_update():
-            return requests.get(
-                "https://raw.githubusercontent.com/aizaznoor/ANK-CINEMA/main/ANK-CINEMA/ank_cinema_core.py",
-                timeout=REQUEST_TIMEOUT
-            )
-        
-        r = call_with_retry(fetch_update)
-        if r.status_code != 200:
-            raise Exception(f"Failed to download: HTTP {r.status_code}")
-        
-        new_code = r.content
-        
-        # Validate syntax before writing
-        try:
-            compile(new_code, '<string>', 'exec')
-        except SyntaxError as e:
-            raise Exception(f"New version has syntax error: {e}")
-        
-        # Write and cleanup backup on success
-        with open(__file__, 'wb') as f:
-            f.write(new_code)
-        
-        backup_path.unlink(missing_ok=True)
-        console.print("[ok]Update applied successfully! Restarting...[/]")
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+        url = "https://raw.githubusercontent.com/aizaznoor/ANK-CINEMA/main/ANK-CINEMA/ank_cinema_core.py"
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            with open(__file__, "wb") as f:
+                f.write(r.content)
+            console.print("[ok]Update applied successfully! Restarting...[/]")
+            os.execv(sys.executable, [sys.executable] + sys.argv)
     except Exception as e:
-        # Attempt restore from backup
-        backup_path = Path(__file__).with_suffix('.py.bak')
-        if backup_path.exists():
-            sh.copy2(backup_path, __file__)
-            console.print(f"[warn]Restored from backup due to error: {e}[/]")
-        else:
-            log_error(f"Update failed and no backup available: {e}")
-            console.print(f"[err]Update failed: {e}[/]")
+        log_error(f"Update failed: {e}")
+        console.print(f"[err]Update failed: {e}[/]")
 
 # ──────────────────────────────────────────────────────────
-# 1.7 LOGGING & RETRY UTILITIES
+# 1.7 LOGGING
 # ──────────────────────────────────────────────────────────
 def log_error(msg: str):
     try:
-        LOGS_D.mkdir(exist_ok=True)
-        with open(LOGS_D / "error.log", "a", encoding="utf-8") as f:
+        log_dir = _SCRIPT_DIR / "logs"
+        log_dir.mkdir(exist_ok=True)
+        with open(log_dir / "error.log", "a", encoding="utf-8") as f:
             f.write(f"[{datetime.now().isoformat()}] {msg}\n")
     except Exception:
         pass
 
-def call_with_retry(fn, max_retries=3, backoff=2.0, timeout_override=None):
-    """Retry network operations with exponential backoff and timeout."""
-    for attempt in range(max_retries):
-        try:
-            return fn(timeout=timeout_override or REQUEST_TIMEOUT)
-        except (requests.Timeout, requests.ConnectionError) as e:
-            if attempt == max_retries - 1:
-                raise
-            wait_time = backoff ** attempt
-            console.print(f"[warn]Network issue. Retrying in {wait_time:.0f}s... (attempt {attempt+1}/{max_retries})[/]")
-            time.sleep(wait_time)
-        except Exception:
-            raise
 
-def verify_download(file_path: Path, expected_size: int = None) -> str:
-    """Verify downloaded file integrity. Returns SHA256 hash."""
-    if not file_path.exists():
-        raise FileNotFoundError(f"Download missing: {file_path}")
-    
-    actual_size = file_path.stat().st_size
-    if expected_size and actual_size != expected_size:
-        raise ValueError(f"Size mismatch: expected {expected_size}, got {actual_size}")
-    
-    # Calculate SHA256
-    sha256_hash = hashlib.sha256()
-    with open(file_path, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b''):
-            sha256_hash.update(chunk)
-    
-    return sha256_hash.hexdigest()
-
-def heal_dns():
-    """Fix DNS issues on all platforms (improved cross-platform support)."""
-    try:
-        if OS == "Windows":
-            subprocess.run(["ipconfig", "/flushdns"], capture_output=True, timeout=5)
-            console.print("[ok]DNS cache flushed (Windows)[/]")
-        elif OS == "Darwin":  # macOS
-            subprocess.run(["sudo", "dscacheutil", "-flushcache"], capture_output=True, timeout=5)
-            console.print("[ok]DNS cache flushed (macOS)[/]")
-        else:  # Linux
-            subprocess.run(["sudo", "systemctl", "restart", "systemd-resolved"], capture_output=True, timeout=5)
-            console.print("[ok]DNS restarted (Linux)[/]")
-    except Exception as e:
-        console.print(f"[warn]DNS healing skipped: {e}[/]")
-        log_error(f"DNS healing failed: {e}")
-
-
-# Config management
+# ──────────────────────────────────────────────────────────
+# 2. CONFIG
+# ──────────────────────────────────────────────────────────
 def load_config() -> dict:
-    """Load config from file or run first-time setup."""
     CONFIG_D.mkdir(parents=True, exist_ok=True)
     if not CONFIG_F.exists():
-        return first_run_setup()
+        CONFIG_F.write_text(json.dumps(DEFAULT_CFG, indent=2))
+        return DEFAULT_CFG.copy()
     try:
         saved = json.loads(CONFIG_F.read_text())
         return {**DEFAULT_CFG, **saved}
     except Exception:
-        console.print("[warn]Config corrupted. Starting fresh setup.[/]")
-        CONFIG_F.unlink(missing_ok=True)
-        return first_run_setup()
-
-def first_run_setup() -> dict:
-    """Guided interactive setup on first launch."""
-    console.clear()
-    console.print(Panel(
-        "Welcome to ANK-CINEMA! Let's configure your preferences.",
-        title="[bold green]✨ First Run Setup[/]",
-        border_style="bold green"
-    ))
-    
-    # Target directory
-    default_target = str(Path.home() / "Movies")
-    target = Prompt.ask(
-        "\n[cyan]📁 Download location[/]",
-        default=default_target
-    ).strip()
-    
-    # Max results
-    max_results_input = Prompt.ask(
-        "[cyan]📊 Max search results per query[/]",
-        default="10"
-    ).strip()
-    try:
-        max_results = int(max_results_input)
-        if max_results < 1:
-            max_results = 10
-    except ValueError:
-        max_results = 10
-    
-    # Build config
-    cfg = {
-        **DEFAULT_CFG,
-        "target_dir": target,
-        "max_results": max_results
-    }
-    
-    save_config(cfg)
-    
-    console.print(f"\n[ok]✓ Setup complete![/]")
-    console.print(f"[dim]Settings saved to {CONFIG_F}[/]\n")
-    
-    return cfg
+        return DEFAULT_CFG.copy()
 
 def save_config(cfg: dict) -> None:
     CONFIG_D.mkdir(parents=True, exist_ok=True)
-    try:
-        CONFIG_F.write_text(json.dumps(cfg, indent=2))
-    except Exception as e:
-        console.print(f"[warn]Failed to save config: {e}[/]")
-        log_error(f"Config save failed: {e}")
+    CONFIG_F.write_text(json.dumps(cfg, indent=2))
 
 
-# Dependencies
+# ──────────────────────────────────────────────────────────
+# 3. DEPENDENCY MANAGEMENT
+# ──────────────────────────────────────────────────────────
 def _which(name: str) -> str | None:
     return shutil.which(name)
 
@@ -439,127 +296,49 @@ def check_deps() -> bool:
     return True
 
 
-# Network helpers
+# ──────────────────────────────────────────────────────────
+# 4. NETWORK
+# ──────────────────────────────────────────────────────────
 def site_reachable() -> bool:
     for url in ["https://1337x.to", "https://thepiratebay.org"]:
         try:
-            requests.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
+            requests.get(url, timeout=4, allow_redirects=True)
             return True
         except Exception:
             continue
     return False
 
-def fetch_trackers() -> list[str]:
-    """Fetch tracker list from remote CDN. Falls back to hardcoded list."""
+def heal_dns() -> bool:
+    """Linux-only: switch to Cloudflare/Google DNS."""
+    if OS != "Linux":
+        return False
+    console.print("[warn]DNS self-healing in progress...[/]")
+    ping = subprocess.run(["ping", "-c", "1", "8.8.8.8"], capture_output=True)
+    if ping.returncode != 0:
+        console.print("[err]No internet connection.[/]")
+        return False
     try:
-        def fetch_remote():
-            return requests.get(
-                "https://raw.githubusercontent.com/aizaznoor/ANK-CINEMA/main/trackers.txt",
-            )
-        
-        r = call_with_retry(fetch_remote, max_retries=2)
-        if r.status_code == 200:
-            trackers = [line.strip() for line in r.text.split('\n') if line.strip()]
-            if trackers:
-                return trackers
-    except Exception as e:
-        log_error(f"Failed to fetch remote trackers: {e}")
-    
-    # Fallback to hardcoded list
-    return TRACKERS_LIST
-
-def get_tracker_string() -> str:
-    """Return the current tracker list as a comma-separated string."""
-    return ",".join(fetch_trackers())
-
-def choose_download_directory(default: str) -> str:
-    """Ask the user to choose a download directory via file explorer."""
-    try:
-        import tkinter as tk
-        from tkinter import filedialog
-
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        selected = filedialog.askdirectory(
-            initialdir=default,
-            title="Select folder to save download"
+        subprocess.run(["sudo", "chattr", "-i", "/etc/resolv.conf"],
+                       capture_output=True)
+        resolv = "nameserver 1.1.1.1\nnameserver 8.8.8.8\n"
+        proc = subprocess.Popen(
+            ["sudo", "tee", "/etc/resolv.conf"],
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL
         )
-        root.destroy()
-        if selected:
-            return selected
-    except Exception as e:
-        log_error(f"Folder chooser unavailable: {e}")
-        console.print("[warn]Folder chooser not available. Using default download folder.[/]")
-    return default
-
-class DownloadHistory:
-    def __init__(self):
-        self.history_file = HISTORY_F
-
-    def load(self) -> list[dict]:
-        if self.history_file.exists():
-            try:
-                return json.loads(self.history_file.read_text(encoding="utf-8"))
-            except Exception:
-                return []
-        return []
-
-    def add(self, title: str, magnet: str, status: str) -> None:
-        history = self.load()
-        history.append({
-            "title": title,
-            "magnet": magnet,
-            "status": status,
-            "timestamp": datetime.now().isoformat()
-        })
-        history = history[-100:]
-        try:
-            self.history_file.write_text(json.dumps(history, indent=2), encoding="utf-8")
-        except Exception as e:
-            log_error(f"Failed to save download history: {e}")
-
-
-def run_aria2_with_progress(cmd: list[str]) -> int:
-    """Run aria2c and display progress via Rich."""
-    progress = Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TextColumn("{task.percentage:>3.0f}%"),
-        TimeRemainingColumn(),
-        transient=True,
-    )
-    task_id = progress.add_task("Downloading", total=100)
-    with progress:
-        p = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True,
-        )
-        if p.stdout is None:
-            return p.wait()
-        import re
-        for line in p.stdout:
-            match = re.search(r"(\d{1,3}(?:\.\d+)?)%", line)
-            if match:
-                percent = float(match.group(1))
-                progress.update(task_id, completed=min(percent, 100.0))
-        return p.wait()
-
+        proc.communicate(resolv.encode())
+        subprocess.run(["sudo", "chattr", "+i", "/etc/resolv.conf"],
+                       capture_output=True)
+    except Exception:
+        pass
+    return site_reachable()
 
 def google_suggest(query: str) -> list[str]:
     try:
-        def fetch_suggestions():
-            return requests.get(
-                "https://suggestqueries.google.com/complete/search",
-                params={"client": "firefox", "q": query},
-                timeout=REQUEST_TIMEOUT
-            )
-        
-        r = call_with_retry(fetch_suggestions, max_retries=2)
+        r = requests.get(
+            "https://suggestqueries.google.com/complete/search",
+            params={"client": "firefox", "q": query},
+            timeout=5,
+        )
         data = r.json()
         return list(data[1])[:5] if len(data) > 1 else []
     except Exception:
@@ -587,7 +366,7 @@ def _size_to_bytes(size_str: str) -> int:
 def scrape_apibay(query: str) -> list[dict]:
     """Search The Pirate Bay via apibay.org JSON API."""
     try:
-        r = requests.get(f"https://apibay.org/q.php?q={query}", timeout=REQUEST_TIMEOUT)
+        r = requests.get(f"https://apibay.org/q.php?q={query}", timeout=10)
         data = r.json()
         if not data or not isinstance(data, list) or "no results" in str(data[0]).lower():
             return []
@@ -609,7 +388,7 @@ def scrape_tgx(query: str) -> list[dict]:
     """Search TorrentGalaxy (fallback scraper)."""
     try:
         url = f"https://torrentgalaxy.to/torrents.php?search={requests.utils.quote(query)}&sort=seeders&order=desc"
-        r = requests.get(url, timeout=REQUEST_TIMEOUT, headers={"User-Agent": "Mozilla/5.0"})
+        r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
         if r.status_code != 200: return []
         
         import re
@@ -695,7 +474,7 @@ def warm_trackers(results: list[dict], count: int = 3) -> None:
                     "--dht-entry-point=router.bittorrent.com:6881",
                     "--enable-peer-exchange=true",
                     "--bt-enable-lpd=true",
-                    f"--bt-tracker={get_tracker_string()}",
+                    f"--bt-tracker={TRACKERS}",
                     "--bt-save-metadata=true",
                     "--bt-metadata-only=true",
                     f"--dir={TEMP_DIR}",
@@ -710,14 +489,10 @@ def warm_trackers(results: list[dict], count: int = 3) -> None:
             pass
 
 def kill_warmers() -> None:
-    """Cleanly terminate background tracker warmers."""
     global _bg_pids
-    for pid in list(_bg_pids):
+    for pid in _bg_pids:
         try:
-            if OS == "Windows":
-                os.kill(pid, signal.SIGBREAK)
-            else:
-                os.kill(pid, signal.SIGTERM)
+            os.kill(pid, signal.SIGTERM if OS != "Windows" else signal.SIGBREAK)
         except (ProcessLookupError, OSError):
             pass
     _bg_pids.clear()
@@ -810,6 +585,43 @@ def enrich_magnet(magnet: str) -> str:
             additions.append(f"&tr={encoded}")
     return magnet + "".join(additions)
 
+
+def choose_download_directory(default_target: str, cfg: dict) -> str:
+    """Ask the user to choose a download directory, with GUI fallback."""
+    chosen = None
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        chosen = filedialog.askdirectory(
+            initialdir=default_target,
+            title="Select download folder for ANK-CINEMA",
+        )
+        root.destroy()
+        if chosen:
+            chosen = str(Path(chosen).expanduser())
+    except Exception:
+        chosen = None
+
+    if not chosen:
+        console.print(f"[dim]Default download folder: {default_target}[/]")
+        if Prompt.ask("Use default download folder?", choices=["y", "n"], default="y") == "y":
+            chosen = default_target
+        else:
+            entered = Prompt.ask("Enter full path to download folder", default=default_target).strip()
+            chosen = str(Path(entered).expanduser())
+
+    if chosen and chosen != default_target:
+        if Prompt.ask("Save this folder as the new default?", choices=["y", "n"], default="n") == "y":
+            cfg["target_dir"] = chosen
+            save_config(cfg)
+
+    return chosen
+
+
 def download(magnet: str, cfg: dict) -> None:
     aria2 = find_aria2c()
     if not aria2:
@@ -817,19 +629,20 @@ def download(magnet: str, cfg: dict) -> None:
         return
 
     default_target = str(Path(cfg["target_dir"]).expanduser())
-    if not Path(default_target).exists():
-        Path(default_target).mkdir(parents=True, exist_ok=True)
+    target = choose_download_directory(default_target, cfg)
+    if not target:
+        console.print("[err]Download cancelled: no destination selected.[/]")
+        return
 
-    selected_target = choose_download_directory(default_target)
-    if not selected_target:
-        selected_target = default_target
-    selected_target = str(Path(selected_target).expanduser())
-    Path(selected_target).mkdir(parents=True, exist_ok=True)
+    target = str(Path(target).expanduser())
+    Path(target).mkdir(parents=True, exist_ok=True)
 
     console.print()
+    magnet = enrich_magnet(magnet)
+
     info = (
         f"[bold green]🚀 Launching high-speed download[/]\n"
-        f"[cyan]📁 Destination :[/] {selected_target}\n"
+        f"[cyan]📁 Destination :[/] {target}\n"
         f"[yellow]⚡ Splits       :[/] {cfg['splits']}  •  "
         f"[yellow]Peers:[/] {cfg['max_peers']}  •  "
         f"[yellow]Seed-time:[/] {cfg['seed_time']}s"
@@ -838,10 +651,10 @@ def download(magnet: str, cfg: dict) -> None:
 
     cmd = [
         aria2,
-        f"--dir={selected_target}",
+        f"--dir={target}",
 
         # ── Tracker list ──────────────────────────────────
-        f"--bt-tracker={get_tracker_string()}",
+        f"--bt-tracker={TRACKERS}",
 
         # ── DHT (the fix for CN:0 / SD:0 / DL:0B) ───────
         # Without these, aria2c can't find peers if trackers
@@ -878,25 +691,16 @@ def download(magnet: str, cfg: dict) -> None:
         magnet,
     ]
 
+    # Real-Debrid: if API key is set, skip torrent in favour of cached link.
+    # The RD unrestrict endpoint returns a direct HTTP download URL which
+    # aria2c handles in HTTP mode (faster, no seeding overhead).
     if cfg.get("rd_api_key"):
-        console.print("[accent]Real-Debrid key detected — instant cache lookup coming in v2.1[/]")
-
-    history = DownloadHistory()
-    title = magnet
-    if "name" in cfg:
-        title = cfg.get("name", magnet)
+        console.print("[accent]Real-Debrid key detected — RD cache lookup is on the roadmap.[/]")
 
     try:
-        return_code = run_aria2_with_progress(cmd)
-        history.add(title, magnet, "completed" if return_code == 0 else f"failed ({return_code})")
-        if return_code != 0:
-            console.print(f"[err]aria2c exited with code {return_code}.[/]")
+        subprocess.run(cmd)
     except KeyboardInterrupt:
-        history.add(title, magnet, "paused")
         console.print("\n[warn]Download paused by user.[/]")
-    except Exception as e:
-        history.add(title, magnet, f"failed ({e})")
-        console.print(f"[err]Download failed: {e}[/]")
 
 
 # ──────────────────────────────────────────────────────────

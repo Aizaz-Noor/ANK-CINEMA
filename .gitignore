@@ -1,39 +1,53 @@
-# Python
+# ── Python ────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
 *.egg-info/
 dist/
 build/
 .eggs/
 
-# Config with personal data
+# ── Virtual environments ───────────────────────────────────────
+.venv/
+venv/
+env/
+pyvenv.cfg
+
+# ── Config with personal data ──────────────────────────────────
 .ank-cinema/
+config/config.json
 config.json
 
-# Temp / runtime files
+# ── Runtime / state files ─────────────────────────────────────
+.installed
+history.json
+ank_results.json
+launcher_output.txt
+
+# ── Temp / download artifacts ─────────────────────────────────
 /tmp/ank_*.json
 *.aria2
 *.torrent
 *.magnet
+temp_aria2.archive
 
-# OS
+# ── Logs ──────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── OS ────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# IDEs
+# ── IDEs ──────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Logs
-*.log
-
-# Media/Tools
+# ── Build assets (can be reproduced) ──────────────────────────
 *.cast
 *.gif
 agg

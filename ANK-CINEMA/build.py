@@ -23,9 +23,19 @@ BUILD_DIR = ROOT / "build"
 ARIA2_VER = "1.37.0"
 ARIA2_URLS = {
     "Windows": f"https://github.com/aria2/aria2/releases/download/release-{ARIA2_VER}/aria2-{ARIA2_VER}-win-64bit-build1.zip",
-    "Linux":   f"https://github.com/aria2/aria2/releases/download/release-{ARIA2_VER}/aria2-{ARIA2_VER}-aarch64-linux-android-build1.tar.bz2", # Placeholder for x86_64
+    "Linux":   f"https://github.com/aria2/aria2/releases/download/release-{ARIA2_VER}/aria2-{ARIA2_VER}-x86_64-linux-android-build1.tar.bz2",
     "Darwin":  f"https://github.com/aria2/aria2/releases/download/release-{ARIA2_VER}/aria2-{ARIA2_VER}-osx-64bit-build1.tar.bz2"
 }
+
+# Note: for production Linux packaging, prefer: apt install aria2 / brew install aria2
+# The GitHub release is Android-targeted; most desktop distros ship aria2 in their repos.
+LINUX_PKG_MSG = (
+    "For Linux, install aria2 via your package manager:\n"
+    "  Ubuntu/Debian: sudo apt install aria2\n"
+    "  Fedora:        sudo dnf install aria2\n"
+    "  Arch:          sudo pacman -S aria2\n"
+    "Then place aria2c in ANK-CINEMA/bin/aria2c"
+)
 
 def setup_binaries():
     """Download and prepare aria2c binaries for bundling."""

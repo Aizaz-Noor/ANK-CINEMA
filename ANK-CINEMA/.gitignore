@@ -1,26 +1,51 @@
-# Byte-compiled / optimized / DLL files
+# ── Python ────────────────────────────────────────────────────
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Distribution / Build
-build/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
 dist/
-ANK-CINEMA.spec
-bin/aria2c*
+build/
 
-# Local Config & State
-config/
-ank_results.json
-.installed
-temp_aria2.archive
-
-# Virtual Environment
+# ── Virtual environments ───────────────────────────────────────
 .venv/
-env/
 venv/
+env/
 ENV/
+pyvenv.cfg
+*.venv
 
-# OS Specific
+# ── Runtime / state files ─────────────────────────────────────
+.installed
+history.json
+ank_results.json
+launcher_output.txt
+
+# ── Config (may contain personal data / API keys) ─────────────
+config/config.json
+
+# ── Download artifacts ────────────────────────────────────────
+*.torrent
+*.aria2
+*.magnet
+
+# ── Logs ──────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── OS junk ───────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ── IDEs ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.kate-swp
+
+# ── Temp files ────────────────────────────────────────────────
+temp_aria2.archive
