@@ -1,130 +1,62 @@
-# ANK-Cinema
-
 <div align="center">
 
-**Cross-platform CLI download manager with a parallel search engine and rich terminal UI**
+# ANK-Cinema
+
+**A terminal-based media downloader for Linux, Windows, and macOS**
 
 [![CI](https://github.com/Aizaz-Noor/ANK-CINEMA/actions/workflows/ci.yml/badge.svg)](https://github.com/Aizaz-Noor/ANK-CINEMA/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue?logo=python&logoColor=white)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](https://github.com/Aizaz-Noor/ANK-CINEMA)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#quick-start)
+[![Tests](https://img.shields.io/badge/tests-26%20passing-brightgreen)](#development)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-orange)](https://github.com/astral-sh/ruff)
 
 </div>
 
 ---
 
-## What This Is
+ANK-Cinema runs from a double-click. It searches multiple torrent indexes in parallel, shows results in a colour-coded table, and hands the chosen magnet to `aria2c` — a download engine it either finds on your system or installs for you. No configuration needed on first run. The app keeps everything inside its own folder and never touches your system Python.
 
-ANK-Cinema is a **zero-dependency, fully portable** CLI application that orchestrates a high-performance
-download pipeline entirely from the terminal. The goal was to build something that *just works* on any
-machine without any configuration — and to push the limits of what a well-engineered Python CLI can do.
-
-> **Scope of what's interesting here:** the parallel search engine, the background metadata warming
-> system, the portable virtual environment bootstrapper, and the cross-platform build pipeline.
+The engineering work that makes this interesting is not the download itself — `aria2c` handles that. It is the pieces around it: the parallel scraper, the background metadata warm-up, the cross-platform bootstrapper, and the magnet enrichment that turns a bare hash into a well-connected download.
 
 ---
 
-## Key Engineering Decisions
+## Table of Contents
 
-### 1. Parallel Multi-Source Search (`ThreadPoolExecutor`)
-
-The search layer fans out to multiple independent data sources simultaneously:
-
-```
-User query
-    │
-    ├──► scrape_apibay()  ─┐
-    │    [JSON API]         ├──► deduplicate by info_hash ──► sort by seeders
-    └──► scrape_tgx()    ──┘
-         [HTML scraper]
-```
-
-Each source runs in its own thread. Results are deduplicated by BitTorrent info-hash before display,
-so the same torrent appearing on both sources shows up once.
-
-**Why not async?** For exactly 2 I/O-bound sources, `ThreadPoolExecutor` has lower overhead than
-`asyncio` and avoids the event loop complexity in a synchronous CLI context.
-
----
-
-### 2. Background Metadata Warming
-
-Before the user picks a result, the top 3 are pre-announced to trackers:
-
-```python
-# Starts lightweight aria2c sessions for top 3 results
-# while the user reads the table — zero perceived wait
-warm_trackers(results, count=3)
-```
-
-This hides the torrent metadata-resolution latency behind the human "reading time".
-When the user selects a result, DHT is already warm and peer connections start immediately.
-
----
-
-### 3. Portable Bootstrapper (Zero External Dependencies)
-
-The `.bat` / `.command` / `.sh` launchers:
-1. Detect the system Python without assuming a PATH
-2. Create an isolated `.venv` inside the project folder
-3. Install only `requests` and `rich` on first launch
-4. Never touch the system Python installation
-
-This is *not* a virtualenv tutorial — the challenge was building a reliable cross-platform
-bootstrapper that handles edge cases: missing Python, partial venv, Windows codepage issues,
-MSYS2 vs native Python, etc.
-
----
-
-### 4. Magnet Enrichment
-
-Bare magnets (just `magnet:?xt=urn:btih:HASH`) rely entirely on DHT to find peers, which is
-slow and blocked by many ISPs over UDP. The `enrich_magnet()` function bakes all tracker URLs
-directly into the magnet string before handing it to `aria2c`:
-
-```python
-magnet:?xt=urn:btih:HASH
-  &tr=https://tracker.opentrackr.org:1337/announce   # HTTPS — bypasses UDP blocks
-  &tr=https://opentracker.i2p.rocks:443/announce
-  ... (16 trackers total, HTTPS-first ordered)
-```
-
-This converts a potentially stalled download into one that starts immediately via HTTPS trackers,
-falling back to UDP/DHT only if needed.
-
----
-
-### 5. Self-Healing DNS (Linux)
-
-When network diagnostics detect that torrent sites resolve but the user's DNS is broken:
-
-```
-ping 8.8.8.8 OK?
-    │ yes
-    └──► chattr -i /etc/resolv.conf
-         write nameserver 1.1.1.1 + 8.8.8.8
-         chattr +i /etc/resolv.conf   # lock to prevent NetworkManager override
-```
-
-This is a targeted fix that identifies the specific failure mode (working IP connectivity,
-broken DNS) and applies the minimal intervention.
+- [Quick Start](#quick-start)
+- [How It Works](#how-it-works)
+  - [Parallel search](#parallel-search)
+  - [Background metadata warm-up](#background-metadata-warm-up)
+  - [Magnet enrichment](#magnet-enrichment)
+  - [Self-healing DNS](#self-healing-dns-linux-only)
+  - [Portable bootstrapper](#portable-bootstrapper)
+- [Configuration](#configuration)
+- [File Structure](#file-structure)
+- [Development](#development)
+- [CI Pipeline](#ci-pipeline)
+- [Tech Stack](#tech-stack)
+- [License](#license)
 
 ---
 
 ## Quick Start
 
-No installation required. Just run the launcher for your OS:
+Clone the repo, then run the file for your operating system. That is all.
 
-| Platform | File | How |
-|:---------|:-----|:----|
-| Windows | `ANK-CINEMA/ANK-CINEMA.bat` | Double-click |
-| macOS | `ANK-CINEMA/ANK-CINEMA.command` | Double-click |
-| Linux | `ANK-CINEMA/ANK-CINEMA-launcher.sh` | `bash ANK-CINEMA-launcher.sh` |
+```bash
+git clone https://github.com/Aizaz-Noor/ANK-CINEMA.git
+cd ANK-CINEMA/ANK-CINEMA
+```
 
-First launch builds a local `.venv` and installs dependencies automatically.
+| Platform | File | Command |
+|:---------|:-----|:--------|
+| Windows | `ANK-CINEMA.bat` | Double-click it |
+| macOS | `ANK-CINEMA.command` | Double-click it |
+| Linux | `ANK-CINEMA-launcher.sh` | `bash ANK-CINEMA-launcher.sh` |
 
-**Or install as a Python package:**
+On first launch, the script creates a `.venv` inside the project folder and installs `requests` and `rich`. Nothing is installed globally. On every launch after that, it goes straight to the app.
+
+**Install as a package instead** (if you prefer `pip`):
 
 ```bash
 cd ANK-CINEMA
@@ -132,106 +64,208 @@ pip install -e .
 ank-cinema
 ```
 
+**Build a standalone binary** (no Python required on the target machine):
+
+```bash
+python build.py
+# Output → dist/ANK-CINEMA  (or ANK-CINEMA.exe on Windows)
+```
+
 ---
 
-## Architecture
+## How It Works
+
+### Parallel search
+
+The search layer sends queries to two independent sources at the same time using `ThreadPoolExecutor`. One hits the apibay.org JSON API (The Pirate Bay's data). The other scrapes TorrentGalaxy's HTML. Both run in separate threads.
 
 ```
-ANK-CINEMA/
-├── ank_cinema_core.py      # Single-file application core (~833 lines)
-│   ├── section 0:  auto-install bootstrap (runs before imports)
-│   ├── section 1:  constants, Rich theme, globals
-│   ├── section 1.5: smart diagnostics
-│   ├── section 1.6: remote updater
-│   ├── section 1.7: error logger
-│   ├── section 2:  config (load/save JSON)
-│   ├── section 3:  dependency management (aria2c detection + install)
-│   ├── section 4:  network (site reachability, DNS healing)
-│   ├── section 5:  search engine (parallel multi-source)
-│   ├── section 6:  background metadata warming
-│   ├── section 7:  display (Rich TUI)
-│   ├── section 8:  download (magnet enrichment + aria2c orchestration)
-│   └── section 9:  interactive main loop
-├── build.py                # PyInstaller build pipeline → produces standalone binary
-├── pyproject.toml          # PEP 517/518 packaging (pip install, entry_points)
-├── requirements.txt        # Pinned runtime dependencies
-├── tests/
-│   ├── conftest.py         # Global no-network fixture
-│   └── test_core.py        # Unit tests (size parsing, health, magnet, config, search)
-├── ANK-CINEMA.bat          # Windows portable launcher
-├── ANK-CINEMA.command      # macOS portable launcher
-├── ANK-CINEMA-launcher.sh  # Linux portable launcher
-├── ANK-CINEMA.desktop      # Linux desktop entry
-├── config/                 # Runtime config (gitignored)
-├── logs/                   # Error logs (gitignored)
-└── bin/                    # aria2c engine binary (Windows: aria2c.exe)
+query
+ ├─► scrape_apibay()   [JSON API]   ─┐
+ └─► scrape_tgx()      [HTML]       ─┴─► deduplicate by info_hash ─► sort by seeders
 ```
+
+Once both threads return, results are deduplicated by BitTorrent info-hash so the same torrent from two sources appears only once. The list is then sorted by seeder count, highest first.
+
+`asyncio` was not used here. For two concurrent I/O calls in a synchronous CLI, `ThreadPoolExecutor` has less setup cost and makes the code easier to follow.
+
+---
+
+### Background metadata warm-up
+
+After the search results appear on screen, and while the user is reading the table, the app quietly pre-announces the top three results to BitTorrent trackers using lightweight `aria2c` sessions in the background.
+
+```python
+warm_trackers(results, count=3)   # starts background sessions immediately after display
+```
+
+BitTorrent metadata resolution takes a few seconds on a fresh magnet. Pre-announcing hides that wait behind the time it takes the user to read and pick a result. When the download actually starts, peers are already known.
+
+---
+
+### Magnet enrichment
+
+A bare magnet link looks like this:
+
+```
+magnet:?xt=urn:btih:AABBCCDDEEFF...
+```
+
+With no tracker list, `aria2c` has to find peers through DHT alone. DHT works over UDP, which many ISPs block or throttle. The `enrich_magnet()` function appends 16 tracker URLs to every magnet before passing it to `aria2c`. Trackers are ordered HTTPS-first so the connection works even under strict firewall rules.
+
+```
+magnet:?xt=urn:btih:HASH
+  &tr=https://tracker.opentrackr.org:1337/announce
+  &tr=https://opentracker.i2p.rocks:443/announce
+  &tr=http://tracker.openbittorrent.com:80/announce
+  &tr=udp://tracker.opentrackr.org:1337/announce
+  ... (16 total)
+```
+
+This is the single biggest reason downloads start fast instead of sitting at `[METADATA]` for minutes.
+
+---
+
+### Self-healing DNS (Linux only)
+
+The startup diagnostics check four things: network connectivity, DNS resolution, disk space, and whether `aria2c` is present. If the connectivity test passes (a raw IP ping works) but DNS fails, the app can fix it.
+
+It writes Cloudflare and Google DNS entries to `/etc/resolv.conf` and uses `chattr +i` to lock the file so `NetworkManager` cannot overwrite them on reconnect. This runs only when the user confirms and only on Linux.
+
+```
+IP ping OK, DNS broken
+ └─► chattr -i /etc/resolv.conf
+     echo "nameserver 1.1.1.1\nnameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+     chattr +i /etc/resolv.conf
+```
+
+---
+
+### Portable bootstrapper
+
+The `.bat`, `.command`, and `.sh` launcher scripts handle first-run setup without assuming anything about the user's environment. Each one:
+
+1. Finds Python without relying on `PATH` order (tries `python`, `python3`, `py` in sequence)
+2. Creates a `.venv` inside the project directory if one does not exist
+3. Installs `requests` and `rich` into that venv
+4. Adds the `bin/` folder (where `aria2c.exe` lives on Windows) to `PATH` for the session
+5. Runs `ank_cinema_core.py` with the venv's Python
+
+The tricky parts were: Windows codepage 1252 crashing on Unicode output (fixed by wrapping `sys.stdout` in UTF-8 before any import), detecting MSYS2 Python vs native Python, and handling partial venvs from interrupted first-runs.
 
 ---
 
 ## Configuration
 
-Settings persist in `config/config.json`:
+The app writes `config/config.json` on first run. Edit it directly or change settings from the app's prompt on each download.
 
-| Key | Default | Description |
-|:----|:--------|:------------|
-| `target_dir` | `~/Movies` | Default download directory |
-| `max_results` | `10` | Search results to display |
-| `splits` | `16` | aria2c parallel connections per file |
+| Key | Default | What it controls |
+|:----|:--------|:----------------|
+| `target_dir` | `~/Movies` | Where files are saved |
+| `max_results` | `10` | How many results the table shows |
+| `splits` | `16` | aria2c connections per file |
 | `max_peers` | `200` | Maximum BitTorrent peers |
-| `seed_time` | `0` | Seconds to seed after completion |
-| `min_split_mb` | `1` | Minimum segment size for splitting |
-| `rd_api_key` | `""` | Real-Debrid API key (optional) |
+| `seed_time` | `0` | Seconds to seed after download finishes |
+| `min_split_mb` | `1` | Minimum chunk size for splitting |
+| `rd_api_key` | `""` | Real-Debrid API key (unused in v3.0, reserved) |
+
+The config file is gitignored. Your personal paths and API keys stay local.
+
+---
+
+## File Structure
+
+```
+ANK-CINEMA/
+├── ank_cinema_core.py       # The whole app — 852 lines, nine numbered sections
+├── build.py                 # Builds a standalone binary via PyInstaller
+├── pyproject.toml           # PEP 517/518 packaging, entry point, dev deps
+├── requirements.txt         # Runtime deps: requests, rich
+│
+├── tests/
+│   ├── conftest.py          # Blocks real network calls during tests
+│   └── test_core.py         # 26 unit tests across 7 test classes
+│
+├── ANK-CINEMA.bat           # Windows launcher
+├── ANK-CINEMA.command       # macOS launcher
+├── ANK-CINEMA-launcher.sh   # Linux launcher (bash)
+├── ANK-CINEMA.desktop       # Linux desktop entry
+│
+├── INSTALL.md               # Setup instructions per platform
+├── CHANGELOG.md             # Version history
+├── CONTRIBUTING.md          # Dev setup and PR guidelines
+└── bin/                     # aria2c.exe lives here on Windows (not tracked in git)
+```
+
+The source is a single file by design. Everything the app does is in `ank_cinema_core.py`. The sections are numbered and commented so you can find any subsystem quickly without a module map.
 
 ---
 
 ## Development
 
 ```bash
-# Clone and set up dev environment
-git clone https://github.com/Aizaz-Noor/ANK-CINEMA
+git clone https://github.com/Aizaz-Noor/ANK-CINEMA.git
 cd ANK-CINEMA/ANK-CINEMA
 pip install -e ".[dev]"
-
-# Run tests
-pytest tests/ -v
-
-# Lint
-ruff check ank_cinema_core.py
-
-# Build standalone binary
-python build.py
-# Output: dist/ANK-CINEMA[.exe]
 ```
 
+This installs the app in editable mode plus `pytest`, `ruff`, and `black`.
+
+**Run the tests:**
+
+```bash
+pytest tests/ -v
+```
+
+All 26 tests run without network access. A `conftest.py` fixture blocks real connections at the socket level so tests are deterministic. The test suite caught a genuine bug during development: `_size_to_bytes("1.5 GiB")` was returning `0` because the suffix-stripping logic stripped the wrong characters from IEC notation. That bug was present in production before the tests were written.
+
+**Lint:**
+
+```bash
+ruff check ank_cinema_core.py
+```
+
+**Build the binary:**
+
+```bash
+python build.py
+```
+
+`build.py` downloads `aria2c` for the current platform if it is not already in `bin/`, then runs PyInstaller with `--onefile`. The output is in `dist/`.
+
 ---
 
-## Technology Stack
+## CI Pipeline
 
-| Tool | Role |
-|:-----|:-----|
-| **Python 3.8+** | Core language — chosen for cross-platform venv support and stdlib completeness |
-| **Rich** | Terminal UI — themed console, tables, progress panels |
-| **requests** | HTTP — search API calls, update checks |
-| **aria2c** | Download engine — handles BitTorrent, magnet links, multi-connection HTTP |
-| **ThreadPoolExecutor** | Parallel search — concurrent multi-source fan-out |
-| **PyInstaller** | Binary packaging — produces a single-file standalone executable |
-| **ruff** | Linting — fast, consistent code style |
-| **pytest** | Testing — unit tests for all deterministic functions |
+Every push and pull request triggers three jobs:
+
+**Lint** — runs `ruff` on all Python files.
+
+**Test matrix** — runs `pytest` across 9 combinations: Python 3.9, 3.11, and 3.12 on Ubuntu, Windows, and macOS. All 9 must pass.
+
+**Build check** — builds the wheel with `python -m build` and runs `twine check` to verify the package metadata is valid.
+
+The matrix is in `.github/workflows/ci.yml`.
 
 ---
 
-## CI
+## Tech Stack
 
-The GitHub Actions pipeline runs on every push:
-
-- **Lint** — ruff on all Python files
-- **Test matrix** — Python 3.9, 3.11, 3.12 × Ubuntu, Windows, macOS (9 combinations)
-- **Build check** — validates the Python package builds and the wheel passes `twine check`
+| Tool | Why it is here |
+|:-----|:--------------|
+| Python 3.8+ | Cross-platform stdlib is complete enough to avoid most dependencies |
+| [Rich](https://github.com/Textualize/rich) | Coloured tables, status spinners, and panels without curses complexity |
+| requests | HTTP for the search API calls and the update check |
+| [aria2c](https://aria2.github.io/) | Handles BitTorrent, magnets, and multi-connection HTTP with one binary |
+| ThreadPoolExecutor | Two parallel search threads — lighter than asyncio for this case |
+| [PyInstaller](https://pyinstaller.org/) | Packages the app into a single executable with no Python required |
+| ruff | Linter — catches issues fast, consistent with CI |
+| pytest | 26 unit tests covering all pure functions |
 
 ---
 
 ## License
 
-MIT — see [LICENSE](../LICENSE).  
+MIT — see [LICENSE](../LICENSE).
+
 Built by [Aizaz Noor](https://github.com/Aizaz-Noor).
