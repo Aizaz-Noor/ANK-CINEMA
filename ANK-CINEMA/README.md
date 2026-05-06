@@ -15,9 +15,9 @@
 
 ---
 
-ANK-Cinema runs from a double-click. It searches multiple torrent indexes in parallel, shows results in a colour-coded table, and hands the chosen magnet to `aria2c` — a download engine it either finds on your system or installs for you. No configuration needed on first run. The app keeps everything inside its own folder and never touches your system Python.
+ANK-Cinema runs from a double-click. It searches multiple torrent indexes in parallel, shows results in a colour-coded table, and hands the chosen magnet to `aria2c`  a download engine it either finds on your system or installs for you. No configuration needed on first run. The app keeps everything inside its own folder and never touches your system Python.
 
-The engineering work that makes this interesting is not the download itself — `aria2c` handles that. It is the pieces around it: the parallel scraper, the background metadata warm-up, the cross-platform bootstrapper, and the magnet enrichment that turns a bare hash into a well-connected download.
+The engineering work that makes this interesting is not the download itself  `aria2c` handles that. It is the pieces around it: the parallel scraper, the background metadata warm-up, the cross-platform bootstrapper, and the magnet enrichment that turns a bare hash into a well-connected download.
 
 ---
 
@@ -266,6 +266,6 @@ The matrix is in `.github/workflows/ci.yml`.
 
 ## License
 
-MIT — see [LICENSE](../LICENSE).
+MIT see [LICENSE](../LICENSE).
 
 Built by [Aizaz Noor](https://github.com/Aizaz-Noor).
