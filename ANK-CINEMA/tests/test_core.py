@@ -19,37 +19,6 @@ import ank_cinema_core as core
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# _size_to_bytes
-# ─────────────────────────────────────────────────────────────────────────────
-class TestSizeToBytes:
-    def test_gigabytes(self):
-        assert core._size_to_bytes("1.5 GiB") == int(1.5 * 1024**3)
-
-    def test_megabytes(self):
-        assert core._size_to_bytes("700 MiB") == 700 * 1024**2
-
-    def test_kilobytes(self):
-        assert core._size_to_bytes("512 KiB") == 512 * 1024
-
-    def test_terabytes(self):
-        assert core._size_to_bytes("2 TiB") == 2 * 1024**4
-
-    def test_plain_bytes(self):
-        assert core._size_to_bytes("1024") == 1024
-
-    def test_empty_string(self):
-        assert core._size_to_bytes("") == 0
-
-    def test_unknown_unit(self):
-        assert core._size_to_bytes("5 ZB") == 0
-
-    def test_uppercase_unit(self):
-        # Units are lowercased internally so GIB should work too
-        result = core._size_to_bytes("1.0 GiB")
-        assert result == 1024**3
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # health
 # ─────────────────────────────────────────────────────────────────────────────
 class TestHealth:

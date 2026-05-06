@@ -51,3 +51,6 @@ desktop.ini
 *.cast
 *.gif
 agg
+
+.claude/
+ANK-CINEMA/bin/aria2c.exe
