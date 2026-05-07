@@ -226,11 +226,11 @@ pytest tests/ -v       # 18 tests — no network required
 
 All 18 tests run without network access. A `conftest.py` fixture blocks real connections at the socket level so tests are fully deterministic. The test suite covers:
 
-- `health()` — boundary testing of the seeder health indicator
-- `enrich_magnet()` — tracker injection and idempotency
-- `load_config` / `save_config` — defaults, roundtrip, partial merge, corrupt JSON
-- `find_aria2c()` — local bin preference and missing engine fallback
-- `search()` — info-hash deduplication and seeder-descending sort
+- `health()` boundary testing of the seeder health indicator
+- `enrich_magnet()` tracker injection and idempotency
+- `load_config` / `save_config` defaults, roundtrip, partial merge, corrupt JSON
+- `find_aria2c()` local bin preference and missing engine fallback
+- `search()` info-hash deduplication and seeder-descending sort
 
 A real bug was caught during development: the upstream apibay API occasionally returns an empty string for file sizes instead of an integer, causing a `ValueError` crash in production. The parser was hardened with `try...except` blocks and safe integer coercion before the v3.0.1 release.
 
@@ -254,11 +254,11 @@ python build_binary.py
 
 Every push and pull request triggers three jobs:
 
-**Lint** — runs `ruff` on all Python files.
+**Lint** runs `ruff` on all Python files.
 
-**Test matrix** — runs `pytest` across 9 combinations: Python 3.9, 3.11, and 3.12 on Ubuntu, Windows, and macOS. All 9 must pass.
+**Test matrix** runs `pytest` across 9 combinations: Python 3.9, 3.11, and 3.12 on Ubuntu, Windows, and macOS. All 9 must pass.
 
-**Build check** — builds the wheel with `python -m build` and runs `twine check` to verify the package metadata is valid before any release.
+**Build check** builds the wheel with `python -m build` and runs `twine check` to verify the package metadata is valid before any release.
 
 The full matrix is in `.github/workflows/ci.yml`.
 
