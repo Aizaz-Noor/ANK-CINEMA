@@ -14,10 +14,8 @@
 
 </div>
 
-<br>
-<div align="center">
-  https://github.com/user-attachments/assets/a2625fe2-cc5f-4a97-afd2-f05ad4c35e6e
-</div>
+
+https://github.com/user-attachments/assets/a2625fe2-cc5f-4a97-afd2-f05ad4c35e6e
 
 ---
 
