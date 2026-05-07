@@ -16,7 +16,7 @@
 
 <br>
 <div align="center">
-  <img src="assets/demo.gif" alt="ANK-Cinema Demo — search, results table, and download startup" width="800" />
+  https://github.com/user-attachments/assets/a2625fe2-cc5f-4a97-afd2-f05ad4c35e6e
 </div>
 
 ---
