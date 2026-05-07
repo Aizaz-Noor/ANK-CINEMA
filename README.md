@@ -123,10 +123,10 @@ This is the main reason downloads start fast instead of stalling at `[METADATA]`
 
 On every startup, the app runs four checks:
 
-1. **Network connectivity** — hits known sites to confirm the network path is open.
-2. **DNS resolution** — resolves `google.com` to verify DNS is functioning.
-3. **Disk space** — warns if free space drops below 500 MB.
-4. **aria2c availability** — confirms the download engine is present and runnable.
+1. **Network connectivity** hits known sites to confirm the network path is open.
+2. **DNS resolution** resolves `google.com` to verify DNS is functioning.
+3. **Disk space** warns if free space drops below 500 MB.
+4. **aria2c availability** confirms the download engine is present and runnable.
 
 If any check fails, a red panel lists the specific issues. On Linux, a DNS failure triggers an optional self-heal prompt.
 
@@ -284,6 +284,6 @@ The full matrix is in `.github/workflows/ci.yml`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT see [LICENSE](LICENSE).
 
 Built by [Aizaz Noor](https://github.com/Aizaz-Noor).
